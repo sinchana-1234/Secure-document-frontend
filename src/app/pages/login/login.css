@@ -1,0 +1,29 @@
+.login-wrap {
+  min-height: 100vh;
+  display: flex; align-items: center; justify-content: center;
+  background: #f4f1ea;
+}
+.login-card {
+  width: 360px; background: #fffdf8;
+  border: 1px solid #e2dcce; border-radius: 12px;
+  padding: 40px 32px; box-shadow: 0 4px 20px rgba(0,0,0,.05);
+}
+.brand { font-size: 28px; font-weight: 700; margin: 0; color: #1a1a1a; text-align: center; }
+.accent { color: #0E7C66; }
+.subtitle { text-align: center; color: #8a8478; font-size: 13px; margin: 4px 0 28px; }
+.field-label { display: block; font-size: 12px; color: #6b6557; margin: 14px 0 6px; font-weight: 600; }
+.field {
+  width: 100%; padding: 10px 12px; border: 1px solid #d8d1c0;
+  border-radius: 8px; font-size: 14px; box-sizing: border-box; background: #fff;
+}
+.field:focus { outline: none; border-color: #0E7C66; }
+.btn-primary {
+  width: 100%; margin-top: 24px; padding: 11px;
+  background: #0E7C66; color: #fff; border: none; border-radius: 8px;
+  font-size: 14px; font-weight: 600; cursor: pointer;
+}
+.btn-primary:disabled { opacity: .6; cursor: default; }
+.error-banner {
+  background: #fdecea; color: #b3261e; border: 1px solid #f5c6c2;
+  padding: 8px 12px; border-radius: 8px; font-size: 13px; margin-bottom: 8px;
+}
