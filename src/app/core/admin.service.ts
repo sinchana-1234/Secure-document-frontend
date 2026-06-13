@@ -18,20 +18,19 @@ export class AdminService {
 
   constructor(private http: HttpClient) {}
 
-  // ── Stats ──────────────────────────────────────────────────────────────────
-
+  // ----- Stats -----
   getStats(): Observable<AdminStats> {
     return this.http.get<AdminStats>(`${this.base}/stats`);
   }
 
-  // ── Users ──────────────────────────────────────────────────────────────────
-
+  // ----- Users -----
   listUsers(params?: ListUsersParams): Observable<UserDetail[]> {
     let p = new HttpParams();
-    if (params?.role)   p = p.set('role', params.role);
+    if (params?.role) p = p.set('role', params.role);
     if (params?.search) p = p.set('search', params.search);
-    if (params?.limit  != null) p = p.set('limit',  params.limit);
+    if (params?.limit != null) p = p.set('limit', params.limit);
     if (params?.offset != null) p = p.set('offset', params.offset);
+
     return this.http.get<UserDetail[]>(`${this.base}/users`, { params: p });
   }
 
@@ -51,16 +50,16 @@ export class AdminService {
     return this.http.delete<void>(`${this.base}/users/${id}`);
   }
 
-  // ── Documents ──────────────────────────────────────────────────────────────
-
+  // ----- Documents -----
   listDocuments(params?: ListDocumentsParams): Observable<DocumentAdminOut[]> {
     let p = new HttpParams();
-    if (params?.status)   p = p.set('status',   params.status);
-    if (params?.doc_type) p = p.set('doc_type',  params.doc_type);
+    if (params?.status) p = p.set('status', params.status);
+    if (params?.doc_type) p = p.set('doc_type', params.doc_type);
     if (params?.owner_id != null) p = p.set('owner_id', params.owner_id);
-    if (params?.search)   p = p.set('search',   params.search);
-    if (params?.limit  != null) p = p.set('limit',  params.limit);
+    if (params?.search) p = p.set('search', params.search);
+    if (params?.limit != null) p = p.set('limit', params.limit);
     if (params?.offset != null) p = p.set('offset', params.offset);
+
     return this.http.get<DocumentAdminOut[]>(`${this.base}/documents`, { params: p });
   }
 
