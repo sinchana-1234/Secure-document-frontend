@@ -68,6 +68,7 @@ export class Login {
     this.auth.login(this.email.trim(), this.password).subscribe({
       next: (res) => {
         this.loading.set(false);
+        this.auth.loadMe();        // fetch name/email for the topbar
         // Role-based redirect: admin → /admin, user → /workspace
         this.router.navigate([res.role === 'admin' ? '/admin' : '/workspace']);
       },

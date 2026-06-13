@@ -1,4 +1,4 @@
-<<<<<<< HEAD
+
 <div class="admin-shell">
 
   <!-- ══════════════════════════════════════════════════════════ TOPBAR -->
@@ -631,82 +631,3 @@
     {{ t.message }}
   </div>
 }
-=======
-<div class="admin-page">
-  <header class="topbar">
-    <h1 class="brand">Secure<span class="accent">Doc</span> <span class="tag">Admin</span></h1>
-    <button class="btn-ghost" (click)="logout()">Log out</button>
-  </header>
-
-  <!-- Stats -->
-  @if (stats(); as s) {
-    <div class="stats-row">
-      <div class="stat-card"><div class="stat-num">{{ s.total_users }}</div><div class="stat-label">Users</div></div>
-      <div class="stat-card"><div class="stat-num">{{ s.total_documents }}</div><div class="stat-label">Documents</div></div>
-      <div class="stat-card"><div class="stat-num">{{ s.indexed_documents }}</div><div class="stat-label">Indexed</div></div>
-      <div class="stat-card"><div class="stat-num">{{ s.failed_documents }}</div><div class="stat-label">Failed</div></div>
-      <div class="stat-card"><div class="stat-num">{{ s.duplicate_documents }}</div><div class="stat-label">Duplicates</div></div>
-    </div>
-  }
-
-  <!-- Users section -->
-  <section class="panel">
-    <div class="panel-head">
-      <h2>Users</h2>
-      <div class="actions">
-        <input class="search" [(ngModel)]="search" (keyup.enter)="loadUsers()" placeholder="Search name or email…" />
-        <button class="btn-ghost" (click)="loadUsers()">Search</button>
-        <button class="btn-primary" (click)="showCreate.set(!showCreate())">
-          {{ showCreate() ? 'Cancel' : '+ New user' }}
-        </button>
-      </div>
-    </div>
-
-    <!-- Create form -->
-    @if (showCreate()) {
-      <div class="create-form">
-        @if (createError()) { <div class="error-banner">{{ createError() }}</div> }
-        <input class="field" [(ngModel)]="newUser.email" placeholder="Email" />
-        <input class="field" type="password" [(ngModel)]="newUser.password" placeholder="Password (min 6)" />
-        <input class="field" [(ngModel)]="newUser.full_name" placeholder="Full name (optional)" />
-        <select class="field" [(ngModel)]="newUser.role">
-          <option value="user">user</option>
-          <option value="admin">admin</option>
-        </select>
-        <button class="btn-primary" (click)="createUser()" [disabled]="creating()">
-          {{ creating() ? 'Creating…' : 'Create' }}
-        </button>
-      </div>
-    }
-
-    @if (error()) { <div class="error-banner">{{ error() }}</div> }
-
-    <!-- Table -->
-    @if (loading()) {
-      <p class="muted">Loading users…</p>
-    } @else {
-      <table class="users-table">
-        <thead>
-          <tr><th>Email</th><th>Name</th><th>Role</th><th>Docs</th><th>Created</th><th></th></tr>
-        </thead>
-        <tbody>
-          @for (u of users(); track u.id) {
-            <tr>
-              <td>{{ u.email }} @if (u.id === myId()) { <span class="you">you</span> }</td>
-              <td>{{ u.full_name || '—' }}</td>
-              <td><span class="role-badge" [class.admin]="u.role === 'admin'">{{ u.role }}</span></td>
-              <td>{{ u.document_count }}</td>
-              <td>{{ u.created_at ? (u.created_at | date:'mediumDate') : '—' }}</td>
-              <td>
-                <button class="btn-danger" (click)="deleteUser(u)" [disabled]="u.id === myId()">Delete</button>
-              </td>
-            </tr>
-          } @empty {
-            <tr><td colspan="6" class="muted">No users found.</td></tr>
-          }
-        </tbody>
-      </table>
-    }
-  </section>
-</div>
->>>>>>> 294da57e21f1ae28f28fa3064eff3cf8d211aa99

@@ -1,0 +1,58 @@
+<div class="ws">
+  <aside class="sidebar">
+    <div class="brand">
+      <span class="brand-mark"><i class="ti ti-shield-lock"></i></span>
+      <span class="brand-text">Secure<span class="accent">Doc</span></span>
+    </div>
+
+    <div class="section-label">Workspace</div>
+    <nav class="nav">
+      <a routerLink="/workspace/chat" routerLinkActive="active" class="nav-item">
+        <i class="ti ti-message-circle"></i> Chat
+      </a>
+      <a routerLink="/workspace/files" routerLinkActive="active" class="nav-item">
+        <i class="ti ti-folder"></i> Files
+      </a>
+    </nav>
+
+    @if (recent().length) {
+      <div class="section-label">Recent</div>
+      <div class="recent">
+        @for (r of recent(); track r.id) {
+          <a routerLink="/workspace/files" class="recent-item" [title]="r.original_filename">
+            <i class="ti ti-file-text"></i>
+            <span class="recent-name">{{ r.title || r.original_filename }}</span>
+          </a>
+        }
+      </div>
+    }
+
+    <div class="doc-stat">
+      <div class="doc-num">{{ docCount() }}</div>
+      <div class="doc-label">{{ docCount() === 1 ? 'document ready' : 'documents ready' }}</div>
+    </div>
+  </aside>
+
+  <div class="main-wrap">
+    <header class="topbar">
+      <div class="title-block">
+        <div class="page-title">{{ pageTitle() }}</div>
+        <div class="page-sub">{{ pageSubtitle() }}</div>
+      </div>
+
+      <div class="profile">
+        <span class="avatar">{{ auth.initial() }}</span>
+        <div class="who">
+          <span class="name">{{ auth.fullName() || 'User' }}</span>
+          <span class="email">{{ auth.email() }}</span>
+        </div>
+        <span class="role-badge" [class.admin]="auth.isAdmin()">{{ auth.role() }}</span>
+        <button class="logout" (click)="logout()"><i class="ti ti-logout"></i> Logout</button>
+      </div>
+    </header>
+
+    <main class="content">
+      <router-outlet />
+    </main>
+  </div>
+</div>

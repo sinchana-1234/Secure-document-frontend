@@ -1,1 +1,20 @@
 /* You can add global styles to this file, and also import other style files */
+html, body {
+  height: 100%;
+  margin: 0;
+  overflow: hidden;   /* the PAGE never scrolls; only inner regions do */
+}
+
+app-root {
+  display: block;
+  height: 100%;       /* the Angular root must fill the body */
+}
+:root {
+  --font-display: 'Space Grotesk', sans-serif;
+  --font-body: 'Inter', sans-serif;
+  --paper: #f4f1ea; --card: #fffdf8; --ink: #1a1a1a;
+  --line: #e2dcce; --accent: #0E7C66; --muted: #8a8478;
+}
+* { font-family: var(--font-body); box-sizing: border-box; }
+h1, h2, h3, .brand { font-family: var(--font-display); }
+body { margin: 0; }

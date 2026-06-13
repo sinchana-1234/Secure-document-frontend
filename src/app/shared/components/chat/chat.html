@@ -1,0 +1,53 @@
+<div class="chat">
+  <div class="messages">
+    
+
+    @for (m of messages(); track $index) {
+      <div class="msg" [class.user]="m.role === 'user'" [class.assistant]="m.role === 'assistant'">
+        <div class="row">
+          <span class="avatar" [class.bot]="m.role === 'assistant'" [class.me]="m.role === 'user'">
+            {{ m.role === 'assistant' ? '🤖' : '👤' }}
+          </span>
+          <div class="bubble">{{ m.text }}</div>
+        </div>
+
+        @if (m.sources && m.sources.length) {
+          <div class="sources">
+            <span class="src-label">Sources</span>
+            @for (s of m.sources; track s.ref) {
+              <span class="chip" [title]="s.snippet">
+                [{{ s.ref }}] {{ s.title || 'Document ' + s.document_id }}
+                <span class="score">{{ (s.score * 100) | number:'1.0-0' }}%</span>
+              </span>
+            }
+          </div>
+
+          <div class="docs">
+            <span class="src-label">Documents</span>
+            @for (d of uniqueDocs(m.sources); track d.id) {
+              <button class="doc-chip" (click)="download(d.id, d.title)" title="Download this document">
+                📄 {{ d.title }} <span class="dl">⬇</span>
+              </button>
+            }
+          </div>
+        }
+      </div>
+    }
+
+    @if (loading()) {
+      <div class="msg assistant">
+        <div class="row">
+          <span class="avatar bot">🤖</span>
+          <div class="bubble thinking">Thinking…</div>
+        </div>
+      </div>
+    }
+    @if (error()) { <div class="error-banner">{{ error() }}</div> }
+  </div>
+
+  <div class="composer">
+    <input class="input" [(ngModel)]="question" (keyup.enter)="ask()"
+           placeholder="Ask about your documents…" [disabled]="loading()" />
+    <button class="send" (click)="ask()" [disabled]="loading() || !question.trim()">Send</button>
+  </div>
+</div>

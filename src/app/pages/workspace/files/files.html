@@ -1,0 +1,57 @@
+<div class="files-page">
+  <h1>Files</h1>
+
+  <!-- Upload -->
+  <section class="upload-card">
+    <div class="upload-row">
+      <input type="file" (change)="onFilePicked($event)" accept=".pdf,.docx,.txt" />
+      <button class="btn-primary" (click)="upload()" [disabled]="!selectedFile || uploading()">
+        {{ uploading() ? 'Uploading…' : 'Upload' }}
+      </button>
+    </div>
+    @if (uploadMsg()) { <div class="ok-banner">{{ uploadMsg() }}</div> }
+    @if (uploadErr()) { <div class="error-banner">{{ uploadErr() }}</div> }
+    <p class="hint">PDF, DOCX, or TXT.</p>
+  </section>
+
+  <!-- Search + list -->
+  <section class="list-card">
+    <div class="list-head">
+      <h2>Your documents</h2>
+      <div class="search-row">
+        <input class="search" [(ngModel)]="search" (keyup.enter)="load()" placeholder="Search files…" />
+        <button class="btn-ghost" (click)="load()">Search</button>
+      </div>
+    </div>
+
+    @if (loading()) {
+      <p class="muted">Loading…</p>
+    } @else if (files().length === 0) {
+      <p class="muted">No documents yet. Upload one to get started.</p>
+    } @else {
+      <table class="files-table">
+        <thead><tr><th>Name</th><th>Type</th><th>Size</th><th>Status</th><th>Uploaded</th><th></th></tr></thead>
+        <tbody>
+          @for (f of files(); track f.id) {
+            <tr>
+              <td>{{ f.title || f.original_filename }}</td>
+              <td>{{ f.doc_type }}</td>
+              <td>{{ f.size_bytes / 1024 | number:'1.0-0' }} KB</td>
+              <td>
+                <span class="status-pill">
+                  <span class="dot" [style.background]="friendly(f.status).dot"></span>
+                  <span [style.color]="friendly(f.status).color">{{ friendly(f.status).label }}</span>
+                </span>
+              </td>
+              <td>{{ f.upload_date | date:'mediumDate' }}</td>
+              <td>
+                <button class="btn-ghost-sm" (click)="downloadFile(f)">Download</button>
+                <button class="btn-danger" (click)="delete(f)">Delete</button>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    }
+  </section>
+</div>
