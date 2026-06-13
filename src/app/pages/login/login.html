@@ -1,21 +1,104 @@
 <div class="login-wrap">
   <div class="login-card">
-    <h1 class="brand">Secure<span class="accent">Doc</span></h1>
+
+    <!-- Brand lockup — same teal used throughout -->
+    <div class="brand-lockup">
+      <div class="brand-icon">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+        </svg>
+      </div>
+      <h1 class="brand">Secure<span class="accent">Doc</span></h1>
+    </div>
     <p class="subtitle">Document Intelligence Platform</p>
 
+    <!-- Server-level error (wrong credentials, backend down, etc.) -->
     @if (error()) {
-      <div class="error-banner">{{ error() }}</div>
+      <div class="alert-error" role="alert">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+        </svg>
+        {{ error() }}
+      </div>
     }
 
-    <label class="field-label">Email</label>
-    <input class="field" type="email" [(ngModel)]="email" placeholder="admin@gmail.com" />
+    <!-- Email field -->
+    <div class="form-field">
+      <label class="field-label" for="login-email">Email</label>
+      <input
+        id="login-email"
+        class="field"
+        [class.field-error]="emailError"
+        type="email"
+        [(ngModel)]="email"
+        (blur)="emailTouched.set(true)"
+        placeholder="you@example.com"
+        autocomplete="email"
+        (keyup.enter)="submit()"
+      />
+      @if (emailError) {
+        <span class="field-hint-error">{{ emailError }}</span>
+      }
+    </div>
 
-    <label class="field-label">Password</label>
-    <input class="field" type="password" [(ngModel)]="password"
-           placeholder="••••••••" (keyup.enter)="submit()" />
+    <!-- Password field with show/hide toggle -->
+    <div class="form-field">
+      <label class="field-label" for="login-password">Password</label>
+      <div class="password-wrap">
+        <input
+          id="login-password"
+          class="field field-pw"
+          [class.field-error]="passwordError"
+          [type]="showPassword() ? 'text' : 'password'"
+          [(ngModel)]="password"
+          (blur)="passwordTouched.set(true)"
+          placeholder="••••••••"
+          autocomplete="current-password"
+          (keyup.enter)="submit()"
+        />
+        <!-- Eye toggle button -->
+        <button
+          type="button"
+          class="btn-eye"
+          (click)="togglePassword()"
+          [attr.aria-label]="showPassword() ? 'Hide password' : 'Show password'"
+          tabindex="-1"
+        >
+          @if (showPassword()) {
+            <!-- Eye-off icon -->
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/>
+              <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/>
+              <line x1="1" y1="1" x2="23" y2="23"/>
+            </svg>
+          } @else {
+            <!-- Eye icon -->
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+              <circle cx="12" cy="12" r="3"/>
+            </svg>
+          }
+        </button>
+      </div>
+      @if (passwordError) {
+        <span class="field-hint-error">{{ passwordError }}</span>
+      }
+    </div>
 
-    <button class="btn-primary" (click)="submit()" [disabled]="loading()">
-      {{ loading() ? 'Signing in…' : 'Sign in' }}
+    <!-- Submit -->
+    <button
+      class="btn-submit"
+      (click)="submit()"
+      [disabled]="loading()"
+      type="button"
+    >
+      @if (loading()) {
+        <span class="spinner-sm"></span>
+        Signing in…
+      } @else {
+        Sign in
+      }
     </button>
+
   </div>
 </div>

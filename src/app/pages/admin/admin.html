@@ -1,0 +1,632 @@
+<div class="admin-shell">
+
+  <!-- ══════════════════════════════════════════════════════════ TOPBAR -->
+  <header class="topbar">
+    <div class="topbar-left">
+      <div class="brand-lockup">
+        <div class="brand-icon">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+          </svg>
+        </div>
+        <span class="brand">Secure<span class="accent">Doc</span></span>
+      </div>
+      <span class="badge-admin">Admin Console</span>
+    </div>
+
+    <nav class="tab-nav" role="tablist">
+      <button role="tab" class="tab-btn" [class.active]="activeTab() === 'users'"
+              (click)="switchTab('users')" aria-controls="panel-users">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="7" r="4"/><path d="M5.5 21a8.38 8.38 0 0 1 13 0"/>
+        </svg>
+        Users
+      </button>
+      <button role="tab" class="tab-btn" [class.active]="activeTab() === 'documents'"
+              (click)="switchTab('documents')" aria-controls="panel-documents">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+          <polyline points="14 2 14 8 20 8"/>
+        </svg>
+        Documents
+      </button>
+    </nav>
+
+    <!-- Sign out triggers confirm modal, not immediate logout -->
+    <button class="btn-logout" (click)="requestLogout()">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+        <polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>
+      </svg>
+      Sign out
+    </button>
+  </header>
+
+  <!-- ══════════════════════════════════════════════════════════ KPI CARDS -->
+  @if (stats(); as s) {
+    <div class="kpi-row" role="region" aria-label="Platform overview">
+
+      <div class="kpi-card">
+        <div class="kpi-icon kpi-icon--blue">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="7" r="4"/><path d="M5.5 21a8.38 8.38 0 0 1 13 0"/>
+          </svg>
+        </div>
+        <div class="kpi-body">
+          <span class="kpi-num">{{ s.total_users }}</span>
+          <span class="kpi-label">Total Users</span>
+        </div>
+      </div>
+
+      <div class="kpi-card">
+        <div class="kpi-icon kpi-icon--teal">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+            <polyline points="14 2 14 8 20 8"/>
+          </svg>
+        </div>
+        <div class="kpi-body">
+          <span class="kpi-num">{{ s.total_documents }}</span>
+          <span class="kpi-label">Documents</span>
+        </div>
+      </div>
+
+      <div class="kpi-card">
+        <div class="kpi-icon kpi-icon--green">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="20 6 9 17 4 12"/>
+          </svg>
+        </div>
+        <div class="kpi-body">
+          <span class="kpi-num kpi-num--green">{{ s.indexed_documents }}</span>
+          <span class="kpi-label">Indexed</span>
+        </div>
+        <div class="kpi-trend kpi-trend--green">
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/>
+          </svg>
+          Active
+        </div>
+      </div>
+
+      <div class="kpi-card">
+        <div class="kpi-icon kpi-icon--red">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"/>
+            <line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+          </svg>
+        </div>
+        <div class="kpi-body">
+          <span class="kpi-num kpi-num--red">{{ s.failed_documents }}</span>
+          <span class="kpi-label">Failed</span>
+        </div>
+        @if (s.failed_documents > 0) {
+          <div class="kpi-trend kpi-trend--red">Needs attention</div>
+        }
+      </div>
+
+      <div class="kpi-card">
+        <div class="kpi-icon kpi-icon--amber">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+            <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+          </svg>
+        </div>
+        <div class="kpi-body">
+          <span class="kpi-num kpi-num--amber">{{ s.duplicate_documents }}</span>
+          <span class="kpi-label">Duplicates</span>
+        </div>
+      </div>
+
+    </div>
+  }
+
+  <!-- ══════════════════════════════════════════════════════════ MAIN -->
+  <main class="main-body">
+
+    <!-- ──────────────────────────────────────────────── USERS PANEL -->
+    @if (activeTab() === 'users') {
+      <section id="panel-users" role="tabpanel" class="panel">
+
+        <div class="panel-toolbar">
+          <div class="toolbar-left">
+            <h2 class="panel-title">Users</h2>
+            @if (!usersLoading()) {
+              <span class="record-badge">{{ users().length }}{{ hasMoreUsers() ? '+' : '' }} shown</span>
+            }
+          </div>
+          <div class="toolbar-right">
+            <div class="search-wrap">
+              <svg class="search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+              </svg>
+              <input class="input-search" type="search" [(ngModel)]="userSearch"
+                     (input)="onUserSearchInput()" placeholder="Search name or email…" />
+            </div>
+            <select class="input-select" [(ngModel)]="userRoleFilter" (change)="onUserRoleChange()">
+              <option value="">All roles</option>
+              <option value="user">User</option>
+              <option value="admin">Admin</option>
+            </select>
+            <button class="btn-primary" (click)="openCreateUser()">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+              </svg>
+              New user
+            </button>
+          </div>
+        </div>
+
+        @if (usersError()) {
+          <div class="alert-error" role="alert">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+            </svg>
+            {{ usersError() }}
+          </div>
+        }
+
+        @if (usersLoading()) {
+          <div class="loading-row"><span class="spinner"></span> Loading users…</div>
+        } @else {
+          <div class="table-wrap">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>User</th><th>Role</th>
+                  <th class="num-col">Docs</th><th>Joined</th>
+                  <th class="actions-col">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (u of users(); track u.id) {
+                  <tr [class.is-self]="u.id === myId()">
+                    <td>
+                      <div class="user-cell">
+                        <div class="avatar">{{ (u.full_name || u.email).charAt(0).toUpperCase() }}</div>
+                        <div>
+                          <div class="user-name">
+                            {{ u.full_name || '—' }}
+                            @if (u.id === myId()) { <span class="pill-you">you</span> }
+                          </div>
+                          <div class="user-email">{{ u.email }}</div>
+                        </div>
+                      </div>
+                    </td>
+                    <td>
+                      <span class="role-pill" [class.is-admin]="u.role === 'admin'">
+                        @if (u.role === 'admin') {
+                          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                          </svg>
+                        }
+                        {{ u.role }}
+                      </span>
+                    </td>
+                    <td class="num-col">
+                      <button class="doc-count-btn" (click)="filterByOwner(u.id)"
+                              [title]="'View documents for ' + u.email">
+                        {{ u.document_count }}
+                      </button>
+                    </td>
+                    <td class="date-col">{{ u.created_at ? (u.created_at | date:'d MMM y') : '—' }}</td>
+                    <td class="actions-col">
+                      <div class="row-actions">
+                        <button class="btn-icon btn-edit" (click)="openEditUser(u)" title="Edit user">
+                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                          </svg>
+                        </button>
+                        <button class="btn-icon btn-delete" (click)="deleteUser(u)"
+                                [disabled]="u.id === myId()" title="Delete user">
+                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="3 6 5 6 21 6"/>
+                            <path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/>
+                            <path d="M9 6V4h6v2"/>
+                          </svg>
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                } @empty {
+                  <tr><td colspan="5">
+                    <div class="empty-state">
+                      <div class="empty-icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                          <circle cx="12" cy="7" r="4"/><path d="M5.5 21a8.38 8.38 0 0 1 13 0"/>
+                        </svg>
+                      </div>
+                      <p class="empty-title">No users found</p>
+                      <p class="empty-sub">Try adjusting your search or filters.</p>
+                    </div>
+                  </td></tr>
+                }
+              </tbody>
+            </table>
+          </div>
+          <div class="pagination">
+            <button class="btn-page" [disabled]="userPage === 0" (click)="prevUserPage()">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+              Previous
+            </button>
+            <span class="page-indicator">Page {{ userPage + 1 }}</span>
+            <button class="btn-page" [disabled]="!hasMoreUsers()" (click)="nextUserPage()">
+              Next
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+            </button>
+          </div>
+        }
+      </section>
+    }
+
+    <!-- ──────────────────────────────────────────── DOCUMENTS PANEL -->
+    @if (activeTab() === 'documents') {
+      <section id="panel-documents" role="tabpanel" class="panel">
+
+        <div class="panel-toolbar">
+          <div class="toolbar-left">
+            <h2 class="panel-title">Documents</h2>
+            @if (!docsLoading()) {
+              <span class="record-badge">{{ documents().length }}{{ hasMoreDocs() ? '+' : '' }} shown</span>
+            }
+          </div>
+          <div class="toolbar-right toolbar-wrap">
+            <div class="search-wrap">
+              <svg class="search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+              </svg>
+              <input class="input-search" type="search" [(ngModel)]="docSearch"
+                     (input)="onDocSearchInput()" placeholder="Search filename or title…" />
+            </div>
+            <select class="input-select" [(ngModel)]="docStatus" (change)="onDocFilterChange()">
+              <option value="">All statuses</option>
+              <option value="indexed">Indexed</option>
+              <option value="processing">Processing</option>
+              <option value="failed">Failed</option>
+              <option value="duplicate">Duplicate</option>
+              <option value="pending">Pending</option>
+            </select>
+            <select class="input-select" [(ngModel)]="docType" (change)="onDocFilterChange()">
+              <option value="">All types</option>
+              <option value="pdf">PDF</option>
+              <option value="docx">DOCX</option>
+              <option value="txt">TXT</option>
+              <option value="image">Image</option>
+            </select>
+            @if (docOwnerFilter) {
+              <button class="btn-ghost btn-clear-filter" (click)="docOwnerFilter=''; onDocFilterChange()">
+                Owner filter
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                  <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                </svg>
+              </button>
+            }
+          </div>
+        </div>
+
+        @if (docsError()) {
+          <div class="alert-error" role="alert">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+            </svg>
+            {{ docsError() }}
+          </div>
+        }
+
+        @if (docsLoading()) {
+          <div class="loading-row"><span class="spinner"></span> Loading documents…</div>
+        } @else {
+          <div class="table-wrap">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Document</th><th>Owner</th><th>Type</th>
+                  <th>Status</th><th class="num-col">Size</th>
+                  <th>Uploaded</th><th class="actions-col">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (doc of documents(); track doc.id) {
+                  <tr>
+                    <td>
+                      <div class="doc-cell">
+                        <span class="doc-type-icon" [attr.data-type]="doc.doc_type">{{ doc.doc_type.toUpperCase() }}</span>
+                        <div>
+                          <div class="doc-title">{{ doc.title || doc.original_filename }}</div>
+                          @if (doc.title && doc.title !== doc.original_filename) {
+                            <div class="doc-filename">{{ doc.original_filename }}</div>
+                          }
+                          @if (doc.page_count) {
+                            <div class="doc-meta">{{ doc.page_count }} pages · {{ doc.num_chunks ?? 0 }} chunks</div>
+                          }
+                        </div>
+                      </div>
+                    </td>
+                    <td>
+                      <button class="owner-link" (click)="filterByOwner(doc.owner_id)">
+                        {{ doc.owner_name || doc.owner_email || '#' + doc.owner_id }}
+                      </button>
+                      @if (doc.owner_name && doc.owner_email) {
+                        <div class="doc-filename">{{ doc.owner_email }}</div>
+                      }
+                    </td>
+                    <td><span class="type-pill">{{ doc.doc_type }}</span></td>
+                    <td>
+                      <span class="status-pill" [ngClass]="statusClass(doc.status)">{{ doc.status }}</span>
+                      @if (doc.error_message) {
+                        <div class="error-hint" [title]="doc.error_message">{{ doc.error_message | slice:0:60 }}…</div>
+                      }
+                    </td>
+                    <td class="num-col">{{ formatBytes(doc.size_bytes) }}</td>
+                    <td class="date-col">{{ doc.upload_date | date:'d MMM y' }}</td>
+                    <td class="actions-col">
+                      <button class="btn-icon btn-delete" (click)="deleteDocument(doc)" title="Delete document">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                          <polyline points="3 6 5 6 21 6"/>
+                          <path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/>
+                          <path d="M9 6V4h6v2"/>
+                        </svg>
+                      </button>
+                    </td>
+                  </tr>
+                } @empty {
+                  <tr><td colspan="7">
+                    <div class="empty-state">
+                      <div class="empty-icon">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                          <polyline points="14 2 14 8 20 8"/>
+                        </svg>
+                      </div>
+                      <p class="empty-title">No documents found</p>
+                      <p class="empty-sub">Try adjusting your filters.</p>
+                    </div>
+                  </td></tr>
+                }
+              </tbody>
+            </table>
+          </div>
+          <div class="pagination">
+            <button class="btn-page" [disabled]="docPage === 0" (click)="prevDocPage()">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+              Previous
+            </button>
+            <span class="page-indicator">Page {{ docPage + 1 }}</span>
+            <button class="btn-page" [disabled]="!hasMoreDocs()" (click)="nextDocPage()">
+              Next
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+            </button>
+          </div>
+        }
+      </section>
+    }
+  </main>
+</div>
+
+<!-- ══════════════════════════════════════════ MODAL: Create User -->
+@if (showCreateUser()) {
+  <div class="modal-backdrop" (click)="closeCreateUser()" role="dialog" aria-modal="true">
+    <div class="modal" (click)="$event.stopPropagation()">
+
+      <div class="modal-header">
+        <div class="modal-title-group">
+          <h3>Create user</h3>
+          <p class="modal-subtitle">Add a new member to your platform</p>
+        </div>
+        <button class="btn-modal-close" (click)="closeCreateUser()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      </div>
+
+      @if (createError()) {
+        <div class="alert-error" style="margin: 0 24px 0;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+          </svg>
+          {{ createError() }}
+        </div>
+      }
+
+      <div class="form-grid">
+
+        <!-- Email -->
+        <div class="form-field">
+          <label class="form-label" for="cu-email">Email <span class="req">*</span></label>
+          <input id="cu-email" class="input-field" type="email"
+                 [class.input-field-error]="cuEmailError"
+                 [(ngModel)]="newUser.email"
+                 (blur)="cuEmailTouched.set(true)"
+                 placeholder="user@example.com" autocomplete="off" />
+          @if (cuEmailError) {
+            <span class="field-hint-error">{{ cuEmailError }}</span>
+          }
+        </div>
+
+        <!-- Full name -->
+        <div class="form-field">
+          <label class="form-label" for="cu-name">Full name</label>
+          <input id="cu-name" class="input-field" type="text"
+                 [(ngModel)]="newUser.full_name" placeholder="Jane Smith" autocomplete="off" />
+        </div>
+
+        <!-- Password with eye toggle -->
+        <div class="form-field">
+          <label class="form-label" for="cu-password">Password <span class="req">*</span></label>
+          <div class="pw-wrap">
+            <input id="cu-password" class="input-field input-field-pw"
+                   [class.input-field-error]="cuPasswordError"
+                   [type]="cuShowPassword() ? 'text' : 'password'"
+                   [(ngModel)]="newUser.password"
+                   (blur)="cuPasswordTouched.set(true)"
+                   placeholder="At least 6 characters" autocomplete="new-password" />
+            <button type="button" class="btn-eye-modal" (click)="cuShowPassword.update(v => !v)"
+                    [attr.aria-label]="cuShowPassword() ? 'Hide password' : 'Show password'">
+              @if (cuShowPassword()) {
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/>
+                  <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/>
+                  <line x1="1" y1="1" x2="23" y2="23"/>
+                </svg>
+              } @else {
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                  <circle cx="12" cy="12" r="3"/>
+                </svg>
+              }
+            </button>
+          </div>
+          @if (cuPasswordError) {
+            <span class="field-hint-error">{{ cuPasswordError }}</span>
+          }
+        </div>
+
+        <!-- Role -->
+        <div class="form-field">
+          <label class="form-label" for="cu-role">Role <span class="req">*</span></label>
+          <select id="cu-role" class="input-field input-select-full" [(ngModel)]="newUser.role">
+            <option value="user">User</option>
+            <option value="admin">Admin</option>
+          </select>
+        </div>
+
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn-ghost" (click)="closeCreateUser()">Cancel</button>
+        <button class="btn-primary" (click)="submitCreateUser()" [disabled]="creating()">
+          @if (creating()) { <span class="spinner-sm"></span> Creating… }
+          @else { Create user }
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- ══════════════════════════════════════════ MODAL: Edit User -->
+@if (editUser(); as eu) {
+  <div class="modal-backdrop" (click)="closeEditUser()" role="dialog" aria-modal="true">
+    <div class="modal" (click)="$event.stopPropagation()">
+
+      <div class="modal-header">
+        <div class="modal-title-group">
+          <h3>Edit user</h3>
+          <p class="modal-subtitle">{{ eu.email }}</p>
+        </div>
+        <button class="btn-modal-close" (click)="closeEditUser()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      </div>
+
+      @if (editError()) {
+        <div class="alert-error" style="margin: 0 24px 0;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+          </svg>
+          {{ editError() }}
+        </div>
+      }
+
+      <div class="form-grid">
+        <div class="form-field">
+          <label class="form-label" for="eu-name">Full name</label>
+          <input id="eu-name" class="input-field" type="text" [(ngModel)]="eu.full_name" placeholder="Full name" />
+        </div>
+        <div class="form-field">
+          <label class="form-label" for="eu-role">Role</label>
+          <select id="eu-role" class="input-field input-select-full" [(ngModel)]="eu.role"
+                  [disabled]="eu.id === myId()">
+            <option value="user">User</option>
+            <option value="admin">Admin</option>
+          </select>
+          @if (eu.id === myId()) {
+            <span class="form-hint">You cannot change your own role.</span>
+          }
+        </div>
+        <!-- Password with eye toggle -->
+        <div class="form-field form-field-full">
+          <label class="form-label" for="eu-password">
+            New password <span class="form-hint-inline">(leave blank to keep current)</span>
+          </label>
+          <div class="pw-wrap">
+            <input id="eu-password" class="input-field input-field-pw"
+                   [type]="euShowPassword() ? 'text' : 'password'"
+                   [(ngModel)]="eu.password"
+                   placeholder="At least 6 characters" autocomplete="new-password" />
+            <button type="button" class="btn-eye-modal" (click)="euShowPassword.update(v => !v)">
+              @if (euShowPassword()) {
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/>
+                  <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/>
+                  <line x1="1" y1="1" x2="23" y2="23"/>
+                </svg>
+              } @else {
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                  <circle cx="12" cy="12" r="3"/>
+                </svg>
+              }
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn-ghost" (click)="closeEditUser()">Cancel</button>
+        <button class="btn-primary" (click)="submitEditUser()" [disabled]="editSaving()">
+          @if (editSaving()) { <span class="spinner-sm"></span> Saving… }
+          @else { Save changes }
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- ══════════════════════════════════════════ MODAL: Sign-out confirm -->
+@if (showLogoutConfirm()) {
+  <div class="modal-backdrop" (click)="cancelLogout()" role="dialog" aria-modal="true">
+    <div class="modal modal-sm" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <div class="modal-title-group">
+          <h3>Sign out?</h3>
+          <p class="modal-subtitle">You'll need to sign in again to access the admin console.</p>
+        </div>
+        <button class="btn-modal-close" (click)="cancelLogout()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-ghost" (click)="cancelLogout()">Stay signed in</button>
+        <button class="btn-danger" (click)="confirmLogout()">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+            <polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>
+          </svg>
+          Sign out
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- ══════════════════════════════════════════ TOAST -->
+@if (toast(); as t) {
+  <div class="toast" [class.toast-success]="t.type === 'success'" [class.toast-error]="t.type === 'error'">
+    @if (t.type === 'success') {
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+        <polyline points="20 6 9 17 4 12"/>
+      </svg>
+    } @else {
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+      </svg>
+    }
+    {{ t.message }}
+  </div>
+}

@@ -11,26 +11,72 @@ import { AuthService } from '../../core/auth.service';
   styleUrl: './login.css',
 })
 export class Login {
-  email = '';
+  email    = '';
   password = '';
-  error = signal<string | null>(null);
-  loading = signal(false);
+
+  // UI state
+  error        = signal<string | null>(null);
+  loading      = signal(false);
+  showPassword = signal(false);       // toggles eye icon
+
+  // Field-level validation signals — shown on blur, not while typing
+  emailTouched    = signal(false);
+  passwordTouched = signal(false);
 
   constructor(private auth: AuthService, private router: Router) {}
 
-  submit() {
+  // ── Validation helpers ─────────────────────────────────────────────────────
+
+  get emailError(): string | null {
+    if (!this.emailTouched()) return null;
+    if (!this.email.trim())             return 'Email is required.';
+    if (!this.isValidEmail(this.email)) return 'Enter a valid email address.';
+    return null;
+  }
+
+  get passwordError(): string | null {
+    if (!this.passwordTouched()) return null;
+    if (!this.password)          return 'Password is required.';
+    if (this.password.length < 6) return 'Password must be at least 6 characters.';
+    return null;
+  }
+
+  get formValid(): boolean {
+    return this.isValidEmail(this.email) && this.password.length >= 6;
+  }
+
+  private isValidEmail(email: string): boolean {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
+  }
+
+  // ── Actions ────────────────────────────────────────────────────────────────
+
+  togglePassword(): void {
+    this.showPassword.update(v => !v);
+  }
+
+  submit(): void {
+    // Mark both fields as touched to show all validation errors at once
+    this.emailTouched.set(true);
+    this.passwordTouched.set(true);
+
+    if (!this.formValid) return;
+
     this.error.set(null);
     this.loading.set(true);
-    this.auth.login(this.email, this.password).subscribe({
+
+    this.auth.login(this.email.trim(), this.password).subscribe({
       next: (res) => {
         this.loading.set(false);
-        // Role-based redirect: admin -> /admin, user -> /workspace
+        // Role-based redirect: admin → /admin, user → /workspace
         this.router.navigate([res.role === 'admin' ? '/admin' : '/workspace']);
       },
       error: (err) => {
         this.loading.set(false);
         this.error.set(
-          err.status === 401 ? 'Incorrect email or password.' : 'Login failed. Is the backend running?'
+          err.status === 401
+            ? 'Incorrect email or password.'
+            : 'Sign in failed. Is the backend running?'
         );
       },
     });
