@@ -88,4 +88,21 @@ export class AdminService {
   deleteDocument(id: number): Observable<void> {
     return this.http.delete<void>(`${this.base}/documents/${id}`);
   }
+
+  downloadDocument(id: number, filename: string): void {
+    this.http.get(`${environment.apiBase}/api/documents/${id}/download`, { responseType: 'blob' })
+      .subscribe({
+        next: (blob) => {
+          const url = window.URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = filename || 'document';
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
+          window.URL.revokeObjectURL(url);
+        },
+        error: () => alert('Could not download the file.'),
+      });
+  }
 }

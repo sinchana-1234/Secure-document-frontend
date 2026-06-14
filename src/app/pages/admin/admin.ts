@@ -518,6 +518,7 @@ export class Admin implements OnInit, OnDestroy, AfterViewChecked {
     if (id == null) return;
     this.api.downloadDocument(id, title || `document-${id}`);
   }
+  
 
   // ── Utilities ──────────────────────────────────────────────────────────────
 

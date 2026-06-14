@@ -110,6 +110,35 @@
 .sidebar-link:hover  { background: var(--bg-subtle); color: var(--text-primary); }
 .sidebar-link.active { background: var(--teal-subtle); color: var(--teal); font-weight: 600; }
 
+/* ── Deep-slate sidebar (match user workspace) ───────────────── */
+.sidebar {
+  background: #26302e;
+  border-right-color: rgba(255, 255, 255, 0.08);
+}
+.sidebar-brand {
+  border-bottom-color: rgba(255, 255, 255, 0.08);
+}
+.sidebar-brand .brand {
+  color: #fff;
+}
+.sidebar-brand .brand .accent {
+  color: #5dcaa5;
+}
+.sidebar-section-label {
+  color: #8aa49c;
+}
+.sidebar-link {
+  color: #c2cfca;
+}
+.sidebar-link:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: #fff;
+}
+.sidebar-link.active {
+  background: #0E7C66;
+  color: #fff;
+}
+
 /* ── Main column ─────────────────────────────────────────── */
 .main-column {
   flex: 1;
