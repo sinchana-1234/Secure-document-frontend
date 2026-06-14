@@ -4,6 +4,9 @@ import {
   computed,
   OnInit,
   OnDestroy,
+  ViewChild,
+  ElementRef,
+  AfterViewChecked,
   ViewEncapsulation,
 } from '@angular/core';
 import { DatePipe, SlicePipe, NgClass } from '@angular/common';
@@ -13,6 +16,8 @@ import { Subject, debounceTime, distinctUntilChanged, takeUntil } from 'rxjs';
 
 import { AuthService } from '../../core/auth.service';
 import { AdminService } from '../../core/admin.service';
+import { ApiService } from '../../core/api.service';
+import { SourceRef } from '../../models/search.model';
 import {
   UserDetail,
   AdminStats,
@@ -34,6 +39,12 @@ interface EditUserState {
   password: string;
 }
 
+interface AdminChatMessage {
+  role: 'user' | 'assistant';
+  text: string;
+  sources?: SourceRef[];
+}
+
 @Component({
   selector: 'app-admin',
   standalone: true,
@@ -42,7 +53,7 @@ interface EditUserState {
   styleUrl: './admin.css',
   encapsulation: ViewEncapsulation.None,
 })
-export class Admin implements OnInit, OnDestroy {
+export class Admin implements OnInit, OnDestroy, AfterViewChecked {
   private readonly destroy$ = new Subject<void>();
 
   // ── Tab ────────────────────────────────────────────────────────────────────
@@ -53,6 +64,7 @@ export class Admin implements OnInit, OnDestroy {
 
   // ── Users ──────────────────────────────────────────────────────────────────
   users        = signal<UserDetail[]>([]);
+  usersTotal   = signal<number>(0);   // ← NEW: total count from backend
   usersLoading = signal(false);
   usersError   = signal<string | null>(null);
 
@@ -67,19 +79,20 @@ export class Admin implements OnInit, OnDestroy {
   createError    = signal<string | null>(null);
   newUser: CreateUserRequest = this.blankNewUser();
 
-  // Create-user field touch state (for inline validation)
+  // Create-user field touch state
   cuEmailTouched    = signal(false);
   cuPasswordTouched = signal(false);
   cuShowPassword    = signal(false);
 
   // Edit user modal
-  editUser   = signal<EditUserState | null>(null);
-  editSaving = signal(false);
-  editError  = signal<string | null>(null);
+  editUser       = signal<EditUserState | null>(null);
+  editSaving     = signal(false);
+  editError      = signal<string | null>(null);
   euShowPassword = signal(false);
 
   // ── Documents ──────────────────────────────────────────────────────────────
   documents   = signal<DocumentAdminOut[]>([]);
+  docsTotal   = signal<number>(0);    // ← NEW: total count from backend
   docsLoading = signal(false);
   docsError   = signal<string | null>(null);
 
@@ -96,10 +109,58 @@ export class Admin implements OnInit, OnDestroy {
   toast = signal<{ message: string; type: 'success' | 'error' } | null>(null);
   private toastTimer: ReturnType<typeof setTimeout> | null = null;
 
+  // ── Floating Chat ──────────────────────────────────────────────────────────
+  chatOpen      = signal(false);
+  chatMessages  = signal<AdminChatMessage[]>([{
+    role: 'assistant',
+    text: "Hi! I'm SecureDoc assistant. Ask me anything about the uploaded documents.",
+  }]);
+  chatQuestion  = signal('');
+  chatLoading   = signal(false);
+  chatError     = signal<string | null>(null);
+  chatUnread    = signal(0);
+
+  @ViewChild('chatBody') private chatBodyRef!: ElementRef<HTMLDivElement>;
+  private shouldScrollChat = false;
+
   // ── Computed ───────────────────────────────────────────────────────────────
-  readonly myId         = computed(() => this.auth.userId());
-  readonly hasMoreUsers = computed(() => this.users().length === this.PAGE_SIZE);
-  readonly hasMoreDocs  = computed(() => this.documents().length === this.PAGE_SIZE);
+  readonly myId = computed(() => this.auth.userId());
+
+  // FIX: use total signals for accurate pagination instead of checking array length
+  readonly hasMoreUsers = computed(() =>
+    (this.userPage + 1) * this.PAGE_SIZE < this.usersTotal()
+  );
+  readonly hasMoreDocs = computed(() =>
+    (this.docPage + 1) * this.PAGE_SIZE < this.docsTotal()
+  );
+
+  readonly adminInitial = computed(() => this.auth.initial());
+  readonly adminName    = computed(() => this.auth.fullName() || this.auth.email() || 'Admin');
+  readonly adminEmail   = computed(() => this.auth.email() ?? '');
+
+  readonly pageTitle = computed(() =>
+    this.activeTab() === 'users' ? 'Users' : 'Documents'
+  );
+  readonly pageSubtitle = computed(() =>
+    this.activeTab() === 'users'
+      ? 'Manage platform members and roles'
+      : 'Browse and manage uploaded documents'
+  );
+
+  // Human-readable page info: "Page 1 of 3"
+  readonly userPageInfo = computed(() => {
+    const total = this.usersTotal();
+    if (total === 0) return '';
+    const totalPages = Math.ceil(total / this.PAGE_SIZE);
+    return `Page ${this.userPage + 1} of ${totalPages} (${total} total)`;
+  });
+
+  readonly docPageInfo = computed(() => {
+    const total = this.docsTotal();
+    if (total === 0) return '';
+    const totalPages = Math.ceil(total / this.PAGE_SIZE);
+    return `Page ${this.docPage + 1} of ${totalPages} (${total} total)`;
+  });
 
   private readonly userSearchChange$ = new Subject<string>();
   private readonly docSearchChange$  = new Subject<string>();
@@ -107,10 +168,12 @@ export class Admin implements OnInit, OnDestroy {
   constructor(
     private auth:     AuthService,
     private adminSvc: AdminService,
+    private api:      ApiService,
     private router:   Router,
   ) {}
 
   ngOnInit(): void {
+    this.auth.loadMe();
     this.loadStats();
     this.loadUsers();
 
@@ -127,6 +190,14 @@ export class Admin implements OnInit, OnDestroy {
     this.destroy$.next();
     this.destroy$.complete();
     if (this.toastTimer) clearTimeout(this.toastTimer);
+  }
+
+  ngAfterViewChecked(): void {
+    if (this.shouldScrollChat && this.chatBodyRef) {
+      const el = this.chatBodyRef.nativeElement;
+      el.scrollTop = el.scrollHeight;
+      this.shouldScrollChat = false;
+    }
   }
 
   // ── Tab ────────────────────────────────────────────────────────────────────
@@ -161,7 +232,13 @@ export class Admin implements OnInit, OnDestroy {
     };
 
     this.adminSvc.listUsers(params).pipe(takeUntil(this.destroy$)).subscribe({
-      next: (list) => { this.users.set(list); this.usersLoading.set(false); },
+      next: (res) => {
+        // ✅ FIX: backend returns { items: [...], total: N } — unwrap correctly
+        const items = Array.isArray(res.items) ? res.items : [];
+        this.users.set(items);
+        this.usersTotal.set(res.total ?? 0);
+        this.usersLoading.set(false);
+      },
       error: () => {
         this.usersError.set('Could not load users. Check that the backend is running.');
         this.usersLoading.set(false);
@@ -187,7 +264,6 @@ export class Admin implements OnInit, OnDestroy {
 
   closeCreateUser(): void { this.showCreateUser.set(false); }
 
-  /** Inline validation for create-user email */
   get cuEmailError(): string | null {
     if (!this.cuEmailTouched()) return null;
     if (!this.newUser.email.trim()) return 'Email is required.';
@@ -195,7 +271,6 @@ export class Admin implements OnInit, OnDestroy {
     return null;
   }
 
-  /** Inline validation for create-user password */
   get cuPasswordError(): string | null {
     if (!this.cuPasswordTouched()) return null;
     if (!this.newUser.password) return 'Password is required.';
@@ -204,7 +279,6 @@ export class Admin implements OnInit, OnDestroy {
   }
 
   submitCreateUser(): void {
-    // Touch all fields to reveal any errors
     this.cuEmailTouched.set(true);
     this.cuPasswordTouched.set(true);
     this.createError.set(null);
@@ -242,7 +316,13 @@ export class Admin implements OnInit, OnDestroy {
   openEditUser(u: UserDetail): void {
     this.editError.set(null);
     this.euShowPassword.set(false);
-    this.editUser.set({ id: u.id, email: u.email, full_name: u.full_name ?? '', role: u.role, password: '' });
+    this.editUser.set({
+      id: u.id,
+      email: u.email,
+      full_name: u.full_name ?? '',
+      role: u.role as 'user' | 'admin',
+      password: '',
+    });
   }
 
   closeEditUser(): void { this.editUser.set(null); }
@@ -286,6 +366,7 @@ export class Admin implements OnInit, OnDestroy {
     this.adminSvc.deleteUser(u.id).pipe(takeUntil(this.destroy$)).subscribe({
       next: () => {
         this.users.update((list) => list.filter((x) => x.id !== u.id));
+        this.usersTotal.update(n => Math.max(0, n - 1));
         this.loadStats();
         this.showToast('User deleted.', 'success');
       },
@@ -299,7 +380,9 @@ export class Admin implements OnInit, OnDestroy {
     this.docsLoading.set(true);
     this.docsError.set(null);
 
-    const ownerId = this.docOwnerFilter.trim() ? parseInt(this.docOwnerFilter, 10) : undefined;
+    const ownerId = this.docOwnerFilter.trim()
+      ? parseInt(this.docOwnerFilter, 10)
+      : undefined;
 
     const params: ListDocumentsParams = {
       search:   this.docSearch.trim() || undefined,
@@ -311,8 +394,17 @@ export class Admin implements OnInit, OnDestroy {
     };
 
     this.adminSvc.listDocuments(params).pipe(takeUntil(this.destroy$)).subscribe({
-      next: (list) => { this.documents.set(list); this.docsLoading.set(false); },
-      error: () => { this.docsError.set('Could not load documents.'); this.docsLoading.set(false); },
+      next: (res) => {
+        // ✅ FIX: backend returns { items: [...], total: N } — unwrap correctly
+        const items = Array.isArray(res.items) ? res.items : [];
+        this.documents.set(items);
+        this.docsTotal.set(res.total ?? 0);
+        this.docsLoading.set(false);
+      },
+      error: () => {
+        this.docsError.set('Could not load documents.');
+        this.docsLoading.set(false);
+      },
     });
   }
 
@@ -329,11 +421,14 @@ export class Admin implements OnInit, OnDestroy {
   }
 
   deleteDocument(doc: DocumentAdminOut): void {
-    if (!confirm(`Permanently delete "${doc.original_filename}"?\n\nThis removes the file, its vectors, and all metadata.`)) return;
+    if (!confirm(
+      `Permanently delete "${doc.original_filename}"?\n\nThis removes the file, its vectors, and all metadata.`
+    )) return;
 
     this.adminSvc.deleteDocument(doc.id).pipe(takeUntil(this.destroy$)).subscribe({
       next: () => {
         this.documents.update((list) => list.filter((d) => d.id !== doc.id));
+        this.docsTotal.update(n => Math.max(0, n - 1));
         this.loadStats();
         this.showToast('Document deleted.', 'success');
       },
@@ -341,22 +436,18 @@ export class Admin implements OnInit, OnDestroy {
     });
   }
 
-  // ── Sign-out confirmation ──────────────────────────────────────────────────
+  // ── Sign-out ───────────────────────────────────────────────────────────────
 
-  /** Shows the confirm-sign-out modal instead of logging out immediately */
-  requestLogout(): void {
-    this.showLogoutConfirm.set(true);
-  }
-
-  cancelLogout(): void {
-    this.showLogoutConfirm.set(false);
-  }
+  requestLogout(): void { this.showLogoutConfirm.set(true); }
+  cancelLogout():  void { this.showLogoutConfirm.set(false); }
 
   confirmLogout(): void {
     this.showLogoutConfirm.set(false);
     this.auth.logout();
     this.router.navigate(['/login']);
   }
+
+  logout(): void { this.requestLogout(); }
 
   // ── Toast ──────────────────────────────────────────────────────────────────
 
@@ -366,11 +457,73 @@ export class Admin implements OnInit, OnDestroy {
     this.toastTimer = setTimeout(() => this.toast.set(null), 3500);
   }
 
+  // ── Floating Chat ──────────────────────────────────────────────────────────
+
+  toggleChat(): void {
+    const opening = !this.chatOpen();
+    this.chatOpen.set(opening);
+    if (opening) {
+      this.chatUnread.set(0);
+      this.shouldScrollChat = true;
+    }
+  }
+
+  closeChat(): void { this.chatOpen.set(false); }
+
+  askChat(): void {
+    const q = this.chatQuestion().trim();
+    if (!q || this.chatLoading()) return;
+
+    this.chatError.set(null);
+    this.chatMessages.update(m => [...m, { role: 'user', text: q }]);
+    this.chatQuestion.set('');
+    this.chatLoading.set(true);
+    this.shouldScrollChat = true;
+
+    this.api.search({ question: q }).pipe(takeUntil(this.destroy$)).subscribe({
+      next: (res) => {
+        this.chatLoading.set(false);
+        this.chatMessages.update(m => [...m, {
+          role: 'assistant',
+          text: res.answer,
+          sources: res.sources,
+        }]);
+        this.shouldScrollChat = true;
+        if (!this.chatOpen()) this.chatUnread.update(n => n + 1);
+      },
+      error: (err) => {
+        this.chatLoading.set(false);
+        this.chatError.set(
+          err.status === 503 ? 'Search not configured (missing API key).' :
+          err.status === 502 ? 'AI service temporarily unavailable.' :
+          'Something went wrong. Please try again.'
+        );
+        this.shouldScrollChat = true;
+      },
+    });
+  }
+
+  chatUniqueDocSources(sources?: SourceRef[]): { id: number; title: string }[] {
+    if (!sources) return [];
+    const seen = new Map<number, string>();
+    for (const s of sources) {
+      if (s.document_id != null && !seen.has(s.document_id)) {
+        seen.set(s.document_id, s.title || `Document ${s.document_id}`);
+      }
+    }
+    return Array.from(seen, ([id, title]) => ({ id, title }));
+  }
+
+  downloadDoc(id: number | null, title: string | null): void {
+    if (id == null) return;
+    this.api.downloadDocument(id, title || `document-${id}`);
+  }
+
   // ── Utilities ──────────────────────────────────────────────────────────────
 
   formatBytes(bytes: number): string {
-    if (bytes < 1024)         return `${bytes} B`;
-    if (bytes < 1024 * 1024)  return `${(bytes / 1024).toFixed(1)} KB`;
+    if (bytes < 1024)        return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
     return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
   }
 
@@ -392,7 +545,4 @@ export class Admin implements OnInit, OnDestroy {
   private blankNewUser(): CreateUserRequest {
     return { email: '', password: '', full_name: '', role: 'user' };
   }
-
-  // alias for old template reference
-  logout(): void { this.requestLogout(); }
 }

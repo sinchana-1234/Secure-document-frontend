@@ -9,9 +9,51 @@
         {{ uploading() ? 'Uploading…' : 'Upload' }}
       </button>
     </div>
-    @if (uploadMsg()) { <div class="ok-banner">{{ uploadMsg() }}</div> }
-    @if (uploadErr()) { <div class="error-banner">{{ uploadErr() }}</div> }
-    <p class="hint">PDF, DOCX, or TXT.</p>
+
+    <!-- Success -->
+    @if (uploadMsg()) {
+      <div class="ok-banner">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <polyline points="20 6 9 17 4 12"/>
+        </svg>
+        {{ uploadMsg() }}
+      </div>
+    }
+
+    <!-- Duplicate warning -->
+    @if (dupInfo(); as dup) {
+      <div class="dup-banner">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+          <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+        </svg>
+        <div>
+          <strong>Duplicate detected</strong>
+          @if (dup.kind === 'near') {
+            <span> — near-duplicate of document #{{ dup.existingId }}</span>
+            @if (dup.similarity != null) {
+              <span class="sim-badge">{{ (dup.similarity * 100).toFixed(1) }}% similar</span>
+            }
+          } @else {
+            <span> — identical file already exists (document #{{ dup.existingId }})</span>
+          }
+          <p class="dup-sub">This file was not uploaded again to avoid duplicates.</p>
+        </div>
+      </div>
+    }
+
+    <!-- Error -->
+    @if (uploadErr() && !dupInfo()) {
+      <div class="error-banner">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"/>
+          <line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+        </svg>
+        {{ uploadErr() }}
+      </div>
+    }
+
+    <p class="hint">PDF, DOCX, or TXT · Max {{ 20 }} MB</p>
   </section>
 
   <!-- Search + list -->
@@ -30,7 +72,12 @@
       <p class="muted">No documents yet. Upload one to get started.</p>
     } @else {
       <table class="files-table">
-        <thead><tr><th>Name</th><th>Type</th><th>Size</th><th>Status</th><th>Uploaded</th><th></th></tr></thead>
+        <thead>
+          <tr>
+            <th>Name</th><th>Type</th><th>Size</th>
+            <th>Status</th><th>Uploaded</th><th></th>
+          </tr>
+        </thead>
         <tbody>
           @for (f of files(); track f.id) {
             <tr>

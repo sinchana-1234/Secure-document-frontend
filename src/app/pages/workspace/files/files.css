@@ -24,3 +24,46 @@
 .btn-ghost-sm { background: #fff; color: #0b5e4d; border: 1px solid #cfe3dc; border-radius: 6px; padding: 5px 12px; cursor: pointer; font-size: 13px; margin-right: 6px; }
 .status-pill { display: inline-flex; align-items: center; gap: 7px; font-size: 13px; }
 .status-pill .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+/* ── Duplicate warning banner ─────────────────────────────────────────── */
+.dup-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 14px;
+  margin-top: 10px;
+  background: #fffbeb;
+  border: 1px solid #f59e0b;
+  border-radius: 8px;
+  color: #92400e;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.dup-banner svg {
+  flex-shrink: 0;
+  margin-top: 2px;
+  stroke: #f59e0b;
+}
+
+.dup-banner strong {
+  font-weight: 600;
+  color: #78350f;
+}
+
+.dup-sub {
+  margin: 2px 0 0;
+  font-size: 12px;
+  color: #a16207;
+}
+
+.sim-badge {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 1px 7px;
+  background: #fef3c7;
+  border: 1px solid #fcd34d;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #92400e;
+}
