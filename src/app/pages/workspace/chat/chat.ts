@@ -6,6 +6,6 @@ import { Chat as ChatComponent } from '../../../shared/components/chat/chat';
   standalone: true,
   imports: [ChatComponent],
   template: `<app-chat />`,
-  styles: [`:host { display: block; height: 100vh; }`],
+  styles: [`:host { display: flex; flex-direction: column; flex: 1; min-height: 0; }`],
 })
 export class WsChat {}

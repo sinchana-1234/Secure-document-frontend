@@ -1,4 +1,4 @@
-import { Component, signal, OnInit} from '@angular/core';
+import { Component, signal, OnInit, ViewChild, ElementRef, AfterViewChecked } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ApiService } from '../../../core/api.service';
 import { SourceRef } from '../../../models/search.model';
@@ -17,7 +17,17 @@ interface ChatMessage {
   templateUrl: './chat.html',
   styleUrl: './chat.css',
 })
-export class Chat implements OnInit {
+export class Chat implements OnInit ,AfterViewChecked {
+  @ViewChild('messagesContainer') private messagesContainer?: ElementRef<HTMLDivElement>;
+  private shouldScroll = false;
+
+  ngAfterViewChecked() {
+    if (this.shouldScroll && this.messagesContainer) {
+      const el = this.messagesContainer.nativeElement;
+      el.scrollTop = el.scrollHeight;
+      this.shouldScroll = false;
+    }
+  }
   messages = signal<ChatMessage[]>([]);
 
   ngOnInit() {
@@ -42,6 +52,7 @@ export class Chat implements OnInit {
     this.messages.update((m) => [...m, { role: 'user', text: q }]);
     this.question = '';
     this.loading.set(true);
+    this.shouldScroll = true; 
 
     this.api.search({ question: q }).subscribe({
       next: (res) => {
@@ -50,6 +61,7 @@ export class Chat implements OnInit {
           ...m,
           { role: 'assistant', text: res.answer, sources: res.sources },
         ]);
+        this.shouldScroll = true;                
       },
       error: (err) => {
         this.loading.set(false);
@@ -58,6 +70,7 @@ export class Chat implements OnInit {
           err.status === 502 ? 'The AI service is temporarily unavailable.' :
           'Something went wrong. Please try again.';
         this.error.set(msg);
+        this.shouldScroll = true; 
       },
     });
   }

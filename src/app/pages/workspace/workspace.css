@@ -31,7 +31,7 @@
 .doc-label { font-size: 11px; color: #9bb0a8; }
 
 .main-wrap { flex: 1; display: flex; flex-direction: column; min-width: 0; min-height: 0; }
-.content > * { height: 100%;}
+.content > * { flex: 1; min-height: 0; }
 .topbar { display: flex; align-items: center; justify-content: space-between;
   padding: 11px 24px; background: var(--card); border-bottom: 1px solid var(--line); }
 .title-block .page-title { font-family: var(--font-display); font-size: 17px; font-weight: 700; color: var(--ink); }
@@ -50,4 +50,13 @@
   border: 1px solid #d8d1c0; border-radius: 8px; cursor: pointer; color: #6b6557; font-size: 13px; }
 .logout:hover { background: var(--paper); }
 
-.content { flex: 1; min-height: 0; overflow: hidden; }
+.content {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+.content > router-outlet {
+  display: none;
+}
