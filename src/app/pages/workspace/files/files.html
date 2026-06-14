@@ -112,7 +112,7 @@
       </table>
     }
   </section>
-  @if (total() > PAGE_SIZE) {
+  @if (total() > 0) {
       <div class="pagination">
         <button class="btn-ghost" [disabled]="page() === 0" (click)="prevPage()">Previous</button>
         <span class="page-info">Page {{ page() + 1 }} of {{ totalPages() }}</span>
