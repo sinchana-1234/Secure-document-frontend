@@ -4,7 +4,7 @@
   <!-- Upload -->
   <section class="upload-card">
     <div class="upload-row">
-      <input type="file" (change)="onFilePicked($event)" accept=".pdf,.docx,.txt" />
+      <input type="file" (change)="onFilePicked($event)" accept=".pdf,.docx,.txt,.png,.jpg,.jpeg,.webp" />
       <button class="btn-primary" (click)="upload()" [disabled]="!selectedFile || uploading()">
         {{ uploading() ? 'Uploading…' : 'Upload' }}
       </button>
@@ -50,7 +50,7 @@
       </div>
     }
 
-    <p class="hint">PDF, DOCX, or TXT · Max {{ 20 }} MB</p>
+    <p class="hint">PDF, DOCX, TXT, or image · Max {{ 20 }} MB</p>
   </section>
 
   <!-- Search + list -->
@@ -119,4 +119,17 @@
         <button class="btn-ghost" [disabled]="!hasMore()" (click)="nextPage()">Next</button>
       </div>
     }
+
+    @if (pendingDelete(); as doc) {
+    <div class="modal-backdrop" (click)="cancelDelete()">
+      <div class="modal-box" (click)="$event.stopPropagation()">
+        <h3>Remove this document?</h3>
+        <p>"{{ doc.title || doc.original_filename }}" will be removed from your documents.</p>
+        <div class="modal-actions">
+          <button class="btn-ghost" (click)="cancelDelete()">Cancel</button>
+          <button class="btn-danger" (click)="confirmDelete()">Remove</button>
+        </div>
+      </div>
+    </div>
+  }
 </div>

@@ -127,9 +127,23 @@ export class WsFiles implements OnInit {
 
   friendly(status: string) { return friendlyStatus(status); }
 
+  pendingDelete = signal<DocumentOut | null>(null);
+
   delete(f: DocumentOut) {
-    if (!confirm(`Delete "${f.original_filename}"?\nThis cannot be undone.`)) return;
-    this.api.deleteDocument(f.id).subscribe({ next: () => this.load() });
+    this.pendingDelete.set(f);   // open the confirmation modal
+  }
+
+  cancelDelete() {
+    this.pendingDelete.set(null);
+  }
+
+  confirmDelete() {
+    const f = this.pendingDelete();
+    if (!f) return;
+    this.api.deleteDocument(f.id).subscribe({
+      next: () => { this.pendingDelete.set(null); this.load(); },
+      error: () => { this.pendingDelete.set(null); },
+    });
   }
 
   downloadFile(f: DocumentOut) {

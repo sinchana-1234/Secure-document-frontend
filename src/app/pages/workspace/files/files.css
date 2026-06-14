@@ -80,3 +80,25 @@
 .btn-delete:hover   { background: #fdecea; border-color: #f5c6c2; color: #b3261e; }
 .pagination { display: flex; align-items: center; justify-content: flex-end; gap: 12px; padding: 14px 0 0; }
 .page-info { font-size: 13px; color: var(--muted); }
+
+.modal-backdrop {
+  position: fixed; inset: 0; background: rgba(0,0,0,.45);
+  display: flex; align-items: center; justify-content: center; z-index: 200;
+}
+.modal-box {
+  background: var(--card); border: 1px solid var(--line); border-radius: 14px;
+  padding: 24px; max-width: 380px; width: 90%;
+  box-shadow: 0 12px 40px rgba(0,0,0,.18);
+}
+.modal-box h3 { margin: 0 0 8px; font-family: var(--font-display); font-size: 17px; color: var(--ink); }
+.modal-box p { margin: 0 0 20px; font-size: 14px; color: var(--muted); line-height: 1.5; }
+.modal-actions { display: flex; justify-content: flex-end; gap: 10px; }
+.modal-box .btn-ghost {
+  padding: 8px 16px; border: 1px solid #d8d1c0; border-radius: 8px;
+  background: transparent; cursor: pointer; font-size: 14px; color: #6b6557;
+}
+.modal-box .btn-danger {
+  padding: 8px 16px; border: none; border-radius: 8px;
+  background: #b3261e; color: #fff; cursor: pointer; font-size: 14px; font-weight: 600;
+}
+.modal-box .btn-danger:hover { background: #9a1e18; }

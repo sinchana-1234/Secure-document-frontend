@@ -22,10 +22,11 @@ export class ApiService {
     if (q) params = params.set('q', q);
     return this.http.get<DocumentOut[]>(`${this.base}/api/documents`, { params });
   }
-  listDocumentsPaged(q: string | undefined, limit: number, offset: number):
+  listDocumentsPaged(q: string | undefined, limit: number, offset: number, mine = false):
       Observable<{ items: DocumentOut[]; total: number }> {
     let params = new HttpParams().set('limit', limit).set('offset', offset);
     if (q) params = params.set('q', q);
+    if (mine) params = params.set('mine', 'true');
     return this.http.get<{ items: DocumentOut[]; total: number }>(
       `${this.base}/api/documents/paged`, { params });
   }
