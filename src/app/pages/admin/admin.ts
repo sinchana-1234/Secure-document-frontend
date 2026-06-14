@@ -18,6 +18,7 @@ import { AuthService } from '../../core/auth.service';
 import { AdminService } from '../../core/admin.service';
 import { ApiService } from '../../core/api.service';
 import { SourceRef } from '../../models/search.model';
+import { DocumentOut } from '../../models/document.model';
 import {
   UserDetail,
   AdminStats,
@@ -29,7 +30,7 @@ import {
   DocStatus,
 } from '../../models/user.model';
 
-type ActiveTab = 'users' | 'documents';
+type ActiveTab = 'users' | 'documents' | 'upload';
 
 interface EditUserState {
   id: number;
@@ -138,14 +139,20 @@ export class Admin implements OnInit, OnDestroy, AfterViewChecked {
   readonly adminName    = computed(() => this.auth.fullName() || this.auth.email() || 'Admin');
   readonly adminEmail   = computed(() => this.auth.email() ?? '');
 
-  readonly pageTitle = computed(() =>
-    this.activeTab() === 'users' ? 'Users' : 'Documents'
-  );
-  readonly pageSubtitle = computed(() =>
-    this.activeTab() === 'users'
-      ? 'Manage platform members and roles'
-      : 'Browse and manage uploaded documents'
-  );
+  readonly pageTitle = computed(() => {
+    switch (this.activeTab()) {
+      case 'users': return 'Users';
+      case 'upload': return 'Upload';
+      default: return 'Documents';
+    }
+  });
+  readonly pageSubtitle = computed(() => {
+    switch (this.activeTab()) {
+      case 'users': return 'Manage platform members and roles';
+      case 'upload': return 'Upload and manage your own files';
+      default: return 'Browse and manage uploaded documents';
+    }
+  });
 
   // Human-readable page info: "Page 1 of 3"
   readonly userPageInfo = computed(() => {
@@ -206,6 +213,9 @@ export class Admin implements OnInit, OnDestroy, AfterViewChecked {
     this.activeTab.set(tab);
     if (tab === 'documents' && this.documents().length === 0) {
       this.loadDocuments();
+    }
+    if (tab === 'upload' && this.myFiles().length === 0) {
+      this.loadMyFiles();
     }
   }
 
@@ -359,10 +369,18 @@ export class Admin implements OnInit, OnDestroy, AfterViewChecked {
     });
   }
 
+  pendingDeleteUser = signal<UserDetail | null>(null);
+
   deleteUser(u: UserDetail): void {
     if (u.id === this.myId()) return;
-    if (!confirm(`Permanently delete ${u.email}?\n\nThis cannot be undone.`)) return;
+    this.pendingDeleteUser.set(u);
+  }
 
+  cancelDeleteUser(): void { this.pendingDeleteUser.set(null); }
+
+  confirmDeleteUser(): void {
+    const u = this.pendingDeleteUser();
+    if (!u) return;
     this.adminSvc.deleteUser(u.id).pipe(takeUntil(this.destroy$)).subscribe({
       next: () => {
         this.users.update((list) => list.filter((x) => x.id !== u.id));
@@ -420,11 +438,17 @@ export class Admin implements OnInit, OnDestroy, AfterViewChecked {
     this.loadDocuments();
   }
 
-  deleteDocument(doc: DocumentAdminOut): void {
-    if (!confirm(
-      `Permanently delete "${doc.original_filename}"?\n\nThis removes the file, its vectors, and all metadata.`
-    )) return;
+  pendingDeleteDoc = signal<DocumentAdminOut | null>(null);
 
+  deleteDocument(doc: DocumentAdminOut): void {
+    this.pendingDeleteDoc.set(doc);
+  }
+
+  cancelDeleteDoc(): void { this.pendingDeleteDoc.set(null); }
+
+  confirmDeleteDoc(): void {
+    const doc = this.pendingDeleteDoc();
+    if (!doc) return;
     this.adminSvc.deleteDocument(doc.id).pipe(takeUntil(this.destroy$)).subscribe({
       next: () => {
         this.documents.update((list) => list.filter((d) => d.id !== doc.id));
@@ -433,6 +457,75 @@ export class Admin implements OnInit, OnDestroy, AfterViewChecked {
         this.showToast('Document deleted.', 'success');
       },
       error: () => this.docsError.set('Could not delete that document.'),
+    });
+  }
+
+  // ── Admin's own uploads (Upload tab) ──────────────────────────────────────
+  myFiles        = signal<DocumentOut[]>([]);
+  myFilesTotal   = signal<number>(0);
+  myFilesLoading = signal(false);
+  myFilesError   = signal<string | null>(null);
+  uploading      = signal(false);
+  uploadError    = signal<string | null>(null);
+  uploadOk       = signal<string | null>(null);
+  selectedFile: File | null = null;
+
+  onFilePicked(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    this.selectedFile = input.files?.[0] ?? null;
+    this.uploadError.set(null);
+    this.uploadOk.set(null);
+  }
+
+  uploadFile(): void {
+    if (!this.selectedFile || this.uploading()) return;
+    this.uploading.set(true);
+    this.uploadError.set(null);
+    this.uploadOk.set(null);
+    this.api.uploadDocument(this.selectedFile).pipe(takeUntil(this.destroy$)).subscribe({
+      next: (res: any) => {
+        this.uploading.set(false);
+        if (res?.status === 'duplicate') {
+          this.uploadError.set('This file is already uploaded — we kept your existing copy.');
+        } else {
+          this.uploadOk.set('File uploaded successfully.');
+        }
+        this.selectedFile = null;
+        this.loadMyFiles();
+      },
+      error: () => {
+        this.uploading.set(false);
+        this.uploadError.set('Upload failed. Please try again.');
+      },
+    });
+  }
+
+  loadMyFiles(): void {
+    this.myFilesLoading.set(true);
+    this.myFilesError.set(null);
+    this.api.listDocumentsPaged(undefined, 50, 0, true).pipe(takeUntil(this.destroy$)).subscribe({
+      next: (res) => {
+        this.myFiles.set(res.items);
+        this.myFilesTotal.set(res.total);
+        this.myFilesLoading.set(false);
+      },
+      error: () => {
+        this.myFilesError.set('Could not load your files.');
+        this.myFilesLoading.set(false);
+      },
+    });
+  }
+
+  // Delete confirmation for admin's own uploaded files
+  pendingDeleteMyFile = signal<DocumentOut | null>(null);
+  deleteMyFile(f: DocumentOut): void { this.pendingDeleteMyFile.set(f); }
+  cancelDeleteMyFile(): void { this.pendingDeleteMyFile.set(null); }
+  confirmDeleteMyFile(): void {
+    const f = this.pendingDeleteMyFile();
+    if (!f) return;
+    this.api.deleteDocument(f.id).pipe(takeUntil(this.destroy$)).subscribe({
+      next: () => { this.pendingDeleteMyFile.set(null); this.loadMyFiles(); },
+      error: () => { this.pendingDeleteMyFile.set(null); },
     });
   }
 

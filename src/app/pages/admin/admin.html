@@ -29,6 +29,13 @@
           </svg>
           Documents
         </button>
+        <button role="tab" class="sidebar-link" [class.active]="activeTab() === 'upload'"
+                (click)="switchTab('upload')" aria-controls="panel-upload">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
+          </svg>
+          Upload
+        </button>
       </nav>
     </div>
   </aside>
@@ -65,6 +72,7 @@
 
     <!-- ══════════════════════════════════════════════════════════ KPI CARDS -->
     @if (stats(); as s) {
+      @if (activeTab() !== 'upload') {
       <div class="kpi-row" role="region" aria-label="Platform overview">
 
         <div class="kpi-card">
@@ -128,7 +136,7 @@
 
       </div>
     }
-
+  }
     <!-- ══════════════════════════════════════════════════════════ MAIN -->
     <main class="main-body">
 
@@ -418,6 +426,58 @@
           }
         </section>
       }
+    <!-- ──────────────────────────────────────────────── UPLOAD PANEL -->
+      @if (activeTab() === 'upload') {
+        <section id="panel-upload" role="tabpanel" class="panel">
+          <div class="panel-toolbar">
+            <div class="toolbar-left">
+              <h2 class="panel-title">Upload</h2>
+            </div>
+          </div>
+
+          <div class="upload-box">
+            <input type="file" accept=".pdf,.docx,.txt,.png,.jpg,.jpeg,.webp" (change)="onFilePicked($event)" />
+            <button class="btn-primary" [disabled]="!selectedFile || uploading()" (click)="uploadFile()">
+              {{ uploading() ? 'Uploading…' : 'Upload' }}
+            </button>
+            <span class="upload-hint">PDF, DOCX, TXT, or image · Max 20 MB</span>
+
+          </div>
+          @if (uploadError()) { <div class="alert-error">{{ uploadError() }}</div> }
+          @if (uploadOk()) { <div class="alert-ok">{{ uploadOk() }}</div> }
+
+          <h3 class="subsection-title">Your uploaded files</h3>
+          @if (myFilesLoading()) {
+            <div class="loading-row"><span class="spinner"></span> Loading your files…</div>
+          } @else if (myFiles().length === 0) {
+            <p class="empty-sub">You haven't uploaded any files yet.</p>
+          } @else {
+            <div class="table-wrap">
+              <table class="data-table">
+                <thead>
+                  <tr><th>Name</th><th>Type</th><th>Status</th><th class="actions-col"></th></tr>
+                </thead>
+                <tbody>
+                  @for (f of myFiles(); track f.id) {
+                    <tr>
+                      <td>{{ f.title || f.original_filename }}</td>
+                      <td><span class="type-pill">{{ f.doc_type }}</span></td>
+                      <td><span class="status-pill" [ngClass]="statusClass(f.status)">{{ f.status }}</span></td>
+                      <td class="actions-col">
+                        <div class="row-actions">
+                          <button class="btn-icon btn-delete" (click)="deleteMyFile(f)" title="Remove">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          }
+        </section>
+      }
     </main>
   </div>
 </div>
@@ -628,6 +688,57 @@
           </svg>
           Sign out
         </button>
+      </div>
+    </div>
+  </div>
+}
+
+@if (pendingDeleteUser(); as u) {
+  <div class="modal-backdrop" (click)="cancelDeleteUser()">
+    <div class="modal modal-sm" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <div class="modal-title-group">
+          <h3>Remove this user?</h3>
+          <p class="modal-subtitle">{{ u.email }} will be removed from the platform.</p>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-ghost" (click)="cancelDeleteUser()">Cancel</button>
+        <button class="btn-danger" (click)="confirmDeleteUser()">Remove</button>
+      </div>
+    </div>
+  </div>
+}
+
+@if (pendingDeleteDoc(); as doc) {
+  <div class="modal-backdrop" (click)="cancelDeleteDoc()">
+    <div class="modal modal-sm" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <div class="modal-title-group">
+          <h3>Remove this document?</h3>
+          <p class="modal-subtitle">"{{ doc.title || doc.original_filename }}" will be removed.</p>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-ghost" (click)="cancelDeleteDoc()">Cancel</button>
+        <button class="btn-danger" (click)="confirmDeleteDoc()">Remove</button>
+      </div>
+    </div>
+  </div>
+}
+
+@if (pendingDeleteMyFile(); as f) {
+  <div class="modal-backdrop" (click)="cancelDeleteMyFile()">
+    <div class="modal modal-sm" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <div class="modal-title-group">
+          <h3>Remove this document?</h3>
+          <p class="modal-subtitle">"{{ f.title || f.original_filename }}" will be removed.</p>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-ghost" (click)="cancelDeleteMyFile()">Cancel</button>
+        <button class="btn-danger" (click)="confirmDeleteMyFile()">Remove</button>
       </div>
     </div>
   </div>
