@@ -1,4 +1,4 @@
-import { Component, signal, OnInit } from '@angular/core';
+import { Component, signal,computed, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { DatePipe, DecimalPipe } from '@angular/common';
 import { ApiService } from '../../../core/api.service';
@@ -26,12 +26,17 @@ export class WsFiles implements OnInit {
   files    = signal<DocumentOut[]>([]);
   loading  = signal(false);
   search   = '';
+  
 
   selectedFile: File | null = null;
   uploading    = signal(false);
   uploadMsg    = signal<string | null>(null);
   uploadErr    = signal<string | null>(null);
-
+  page     = signal(0);
+  total    = signal(0);
+  readonly PAGE_SIZE = 10;
+  readonly hasMore = computed(() => (this.page() + 1) * this.PAGE_SIZE < this.total());
+  readonly totalPages = computed(() => Math.ceil(this.total() / this.PAGE_SIZE));
   // ── NEW: duplicate state ────────────────────────────────────────────────
   dupInfo = signal<{
     kind: string;
@@ -45,11 +50,21 @@ export class WsFiles implements OnInit {
 
   load() {
     this.loading.set(true);
-    this.api.listDocuments(this.search || undefined).subscribe({
-      next: (list) => { this.files.set(list); this.loading.set(false); },
-      error: ()     => { this.loading.set(false); },
-    });
+    this.api.listDocumentsPaged(this.search || undefined, this.PAGE_SIZE, this.page() * this.PAGE_SIZE)
+      .subscribe({
+        next: (res) => {
+          this.files.set(res.items);
+          this.total.set(res.total);
+          this.loading.set(false);
+        },
+        error: () => { this.loading.set(false); },
+      });
   }
+
+  prevPage() { if (this.page() > 0) { this.page.set(this.page() - 1); this.load(); } }
+  nextPage() { if (this.hasMore()) { this.page.set(this.page() + 1); this.load(); } }
+  doSearch() { this.page.set(0); this.load(); }
+
 
   onFilePicked(event: Event) {
     const input = event.target as HTMLInputElement;
@@ -84,10 +99,7 @@ export class WsFiles implements OnInit {
             similarity: res.similarity ?? null,
           });
 
-          this.uploadErr.set(
-            `This file is an ${kind} of document #${res.duplicate_of_id}${simPct}. ` +
-            `It was not uploaded again.`
-          );
+          this.uploadErr.set('This file is already uploaded — we kept your existing copy.');
           return;
         }
 

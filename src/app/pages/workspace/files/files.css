@@ -10,7 +10,7 @@
 .btn-primary { background: var(--accent); color: #fff; border: none; border-radius: 8px; padding: 8px 18px; font-weight: 600; cursor: pointer; }
 .btn-primary:disabled { opacity: .5; }
 .btn-ghost { background: transparent; border: 1px solid #d8d1c0; border-radius: 8px; padding: 8px 14px; cursor: pointer; }
-.btn-danger { background: #fff; color: #b3261e; border: 1px solid #f0c4c0; border-radius: 6px; padding: 5px 12px; cursor: pointer; font-size: 13px; }
+
 .files-table { width: 100%; border-collapse: collapse; }
 .files-table th { text-align: left; font-size: 12px; color: var(--muted); padding: 8px 10px; border-bottom: 2px solid var(--line); }
 .files-table td { padding: 10px; border-bottom: 1px solid #efe9dc; font-size: 14px; }
@@ -21,7 +21,7 @@
 .muted { color: var(--muted); }
 .ok-banner { background: #e6f4ef; color: #0b5e4d; padding: 8px 12px; border-radius: 8px; font-size: 13px; margin-top: 10px; }
 .error-banner { background: #fdecea; color: #b3261e; border: 1px solid #f5c6c2; padding: 8px 12px; border-radius: 8px; font-size: 13px; margin-top: 10px; }
-.btn-ghost-sm { background: #fff; color: #0b5e4d; border: 1px solid #cfe3dc; border-radius: 6px; padding: 5px 12px; cursor: pointer; font-size: 13px; margin-right: 6px; }
+
 .status-pill { display: inline-flex; align-items: center; gap: 7px; font-size: 13px; }
 .status-pill .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
 /* ── Duplicate warning banner ─────────────────────────────────────────── */
@@ -67,3 +67,16 @@
   font-weight: 600;
   color: #92400e;
 }
+
+.row-actions { display: flex; gap: 6px; align-items: center; }
+.btn-icon {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 32px; height: 32px; border-radius: 7px;
+  border: 1px solid var(--line); background: var(--card);
+  color: var(--muted); cursor: pointer;
+  transition: background .13s, border-color .13s, color .13s;
+}
+.btn-download:hover { background: #eef5f2; border-color: #cfe3dc; color: #0b5e4d; }
+.btn-delete:hover   { background: #fdecea; border-color: #f5c6c2; color: #b3261e; }
+.pagination { display: flex; align-items: center; justify-content: flex-end; gap: 12px; padding: 14px 0 0; }
+.page-info { font-size: 13px; color: var(--muted); }

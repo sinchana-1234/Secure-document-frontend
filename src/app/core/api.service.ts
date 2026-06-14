@@ -22,6 +22,13 @@ export class ApiService {
     if (q) params = params.set('q', q);
     return this.http.get<DocumentOut[]>(`${this.base}/api/documents`, { params });
   }
+  listDocumentsPaged(q: string | undefined, limit: number, offset: number):
+      Observable<{ items: DocumentOut[]; total: number }> {
+    let params = new HttpParams().set('limit', limit).set('offset', offset);
+    if (q) params = params.set('q', q);
+    return this.http.get<{ items: DocumentOut[]; total: number }>(
+      `${this.base}/api/documents/paged`, { params });
+  }
 
   uploadDocument(file: File, title?: string): Observable<any> {
     const form = new FormData();

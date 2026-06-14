@@ -28,16 +28,13 @@
           <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
         </svg>
         <div>
-          <strong>Duplicate detected</strong>
+          <strong>This file is already uploaded</strong>
           @if (dup.kind === 'near') {
-            <span> — near-duplicate of document #{{ dup.existingId }}</span>
-            @if (dup.similarity != null) {
-              <span class="sim-badge">{{ (dup.similarity * 100).toFixed(1) }}% similar</span>
-            }
+            <span> — it closely matches a document you already have.</span>
           } @else {
-            <span> — identical file already exists (document #{{ dup.existingId }})</span>
+            <span> — you already have this file in your documents.</span>
           }
-          <p class="dup-sub">This file was not uploaded again to avoid duplicates.</p>
+          <!-- <p class="dup-sub">We kept your existing copy, so nothing was changed.</p> -->
         </div>
       </div>
     }
@@ -61,8 +58,8 @@
     <div class="list-head">
       <h2>Your documents</h2>
       <div class="search-row">
-        <input class="search" [(ngModel)]="search" (keyup.enter)="load()" placeholder="Search files…" />
-        <button class="btn-ghost" (click)="load()">Search</button>
+        <input class="search" [(ngModel)]="search" (keyup.enter)="doSearch()" placeholder="Search files…" />
+        <button class="btn-ghost" (click)="doSearch()">Search</button>
       </div>
     </div>
 
@@ -92,8 +89,22 @@
               </td>
               <td>{{ f.upload_date | date:'mediumDate' }}</td>
               <td>
-                <button class="btn-ghost-sm" (click)="downloadFile(f)">Download</button>
-                <button class="btn-danger" (click)="delete(f)">Delete</button>
+                <div class="row-actions">
+                  <button class="btn-icon btn-download" (click)="downloadFile(f)" title="Download">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                      <polyline points="7 10 12 15 17 10"/>
+                      <line x1="12" y1="15" x2="12" y2="3"/>
+                    </svg>
+                  </button>
+                  <button class="btn-icon btn-delete" (click)="delete(f)" title="Delete">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <polyline points="3 6 5 6 21 6"/>
+                      <path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/>
+                      <path d="M9 6V4h6v2"/>
+                    </svg>
+                  </button>
+                </div>
               </td>
             </tr>
           }
@@ -101,4 +112,11 @@
       </table>
     }
   </section>
+  @if (total() > PAGE_SIZE) {
+      <div class="pagination">
+        <button class="btn-ghost" [disabled]="page() === 0" (click)="prevPage()">Previous</button>
+        <span class="page-info">Page {{ page() + 1 }} of {{ totalPages() }}</span>
+        <button class="btn-ghost" [disabled]="!hasMore()" (click)="nextPage()">Next</button>
+      </div>
+    }
 </div>
