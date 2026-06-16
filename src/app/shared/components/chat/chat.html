@@ -1,6 +1,5 @@
 <div class="chat">
   <div class="messages" #messagesContainer>
-    
 
     @for (m of messages(); track $index) {
       <div class="msg" [class.user]="m.role === 'user'" [class.assistant]="m.role === 'assistant'">
@@ -8,12 +7,12 @@
           <span class="avatar" [class.bot]="m.role === 'assistant'" [class.me]="m.role === 'user'">
             {{ m.role === 'assistant' ? '🤖' : '👤' }}
           </span>
-          <div class="bubble">{{ m.text }}</div>
+          <div class="bubble" [class.blocked]="m.blocked">{{ m.text }}</div>
         </div>
 
-        <!-- @if (m.sources && m.sources.length) {
+        @if (m.sources && m.sources.length && !m.blocked) {
           <div class="sources">
-            <span class="src-label">Sources</span>
+            <span class="src-label">SOURCES</span>
             @for (s of m.sources; track s.ref) {
               <span class="chip" [title]="s.snippet">
                 [{{ s.ref }}] {{ s.title || 'Document ' + s.document_id }}
@@ -23,14 +22,13 @@
           </div>
 
           <div class="docs">
-            <span class="src-label">Documents</span>
             @for (d of uniqueDocs(m.sources); track d.id) {
               <button class="doc-chip" (click)="download(d.id, d.title)" title="Download this document">
                 📄 {{ d.title }} <span class="dl">⬇</span>
               </button>
             }
           </div>
-        } -->
+        }
       </div>
     }
 
@@ -42,7 +40,16 @@
         </div>
       </div>
     }
-    @if (error()) { <div class="error-banner">{{ error() }}</div> }
+
+    @if (error()) {
+      <div class="msg assistant">
+        <div class="row">
+          <span class="avatar bot">🤖</span>
+          <div class="bubble blocked">{{ error() }}</div>
+        </div>
+      </div>
+    }
+
   </div>
 
   <div class="composer">

@@ -8,6 +8,7 @@ interface ChatMessage {
   role: 'user' | 'assistant';
   text: string;
   sources?: SourceRef[];
+  blocked?: boolean;
 }
 
 @Component({
@@ -17,7 +18,7 @@ interface ChatMessage {
   templateUrl: './chat.html',
   styleUrl: './chat.css',
 })
-export class Chat implements OnInit ,AfterViewChecked {
+export class Chat implements OnInit, AfterViewChecked {
   @ViewChild('messagesContainer') private messagesContainer?: ElementRef<HTMLDivElement>;
   private shouldScroll = false;
 
@@ -28,16 +29,16 @@ export class Chat implements OnInit ,AfterViewChecked {
       this.shouldScroll = false;
     }
   }
+
   messages = signal<ChatMessage[]>([]);
 
   ngOnInit() {
-    // Seed the conversation with an assistant greeting so chat opens like a real
-    // chatbot, not an empty page.
     this.messages.set([{
       role: 'assistant',
       text: "Hi! I'm SecureDoc, your document assistant. Ask me anything about your uploaded files — I'll answer using only your documents and cite the exact sources, which you can download right from the chat. What would you like to know?",
     }]);
   }
+
   question = '';
   loading = signal(false);
   error = signal<string | null>(null);
@@ -52,7 +53,7 @@ export class Chat implements OnInit ,AfterViewChecked {
     this.messages.update((m) => [...m, { role: 'user', text: q }]);
     this.question = '';
     this.loading.set(true);
-    this.shouldScroll = true; 
+    this.shouldScroll = true;
 
     this.api.search({ question: q }).subscribe({
       next: (res) => {
@@ -61,26 +62,37 @@ export class Chat implements OnInit ,AfterViewChecked {
           ...m,
           { role: 'assistant', text: res.answer, sources: res.sources },
         ]);
-        this.shouldScroll = true;                
+        this.shouldScroll = true;
       },
       error: (err) => {
         this.loading.set(false);
-        const msg =
-          err.status === 503 ? 'Search is not configured (missing API key).' :
-          err.status === 502 ? 'The AI service is temporarily unavailable.' :
-          'Something went wrong. Please try again.';
-        this.error.set(msg);
-        this.shouldScroll = true; 
+
+        // 400 = firewall blocked or bad input — show as an assistant message
+        // so it appears inline in the chat, not as a floating error banner.
+        // Message is intentionally generic — never expose security internals to users.
+        if (err.status === 400) {
+          const detail = err.error?.detail ?? "I'm sorry, that request couldn't be processed. Please try a different question.";
+          this.messages.update((m) => [
+            ...m,
+            { role: 'assistant', text: detail, blocked: true },
+          ]);
+        } else {
+          const msg =
+            err.status === 503 ? 'Search is not configured. Please contact support.' :
+            err.status === 502 ? 'The service is temporarily unavailable. Please try again shortly.' :
+            'Something went wrong. Please try again.';
+          this.error.set(msg);
+        }
+        this.shouldScroll = true;
       },
     });
   }
+
   download(id: number | null, title: string | null) {
     if (id == null) return;
     this.api.downloadDocument(id, title || `document-${id}`);
   }
 
-  // Cited chunks often come from the SAME document (6 chips, one file). Dedupe by
-  // document_id so we show each downloadable document once.
   uniqueDocs(sources?: SourceRef[]): { id: number; title: string }[] {
     if (!sources) return [];
     const seen = new Map<number, string>();
